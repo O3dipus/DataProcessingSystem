@@ -173,28 +173,28 @@ public:
       // build side (d, vector of a)
       std::vector<int64_t> __v;
       std::vector<std::pair<int64_t, std::vector<int64_t>>> hash_table(10000, std::make_pair(-1, __v)); // 10000 = 5000 * 2
-      int d_size = phase1_d.size();
-      int input1_size = input1.size();
+      int d_size = d_col.size();
+      int table3_size = table3.size();
       //std::cout << "Size of phase1_d: " << d_size << ". \n";
       
       for (int i = 0; i < d_size; i++) {
-          int64_t hash_val = phase1_d[i] % 101; // hash function, 100**2 = 10000, 101 is next prime
+          int64_t hash_val = d_col[i] % 101; // hash function, 100**2 = 10000, 101 is next prime
           if (hash_table[hash_val].first == -1) {
-              hash_table[hash_val].first = phase1_d[i];
+              hash_table[hash_val].first = d_col[i];
           }
-          hash_table[hash_val].second.push_back(phase1_a[i]);
+          hash_table[hash_val].second.push_back(a_col[i]);
       }
 
       // std::cout << "Start Probe \n";
       // probe side
-      for (int j = 0; j < input1_size; j++) { 
-          int64_t probe_val = input1[j].first;
+      for (int j = 0; j < table3_size; j++) { 
+          int64_t probe_val = table3[j].first;
           int64_t hash_val = probe_val % 101;
           if (hash_table[hash_val].first == probe_val) {//d == probe
               int a_size = hash_table[hash_val].second.size();
               for (int k = 0; k < a_size; k++) {
                   phase2_a.push_back(hash_table[hash_val].second[k]);
-                  phase2_f.push_back(input1[j].second);
+                  phase2_f.push_back(table3[j].second);
               }
           }
       }
