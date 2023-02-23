@@ -31,7 +31,7 @@ public:
 		int _pivotValue = _column ? _table[_right].second : _table[_right].first;
 		int _divideIndex = _left;
 		for(int _index=_left; _index<_right; _index++){
-			if (_column ? _table[_index].second : _table[_index].first < _pivotValue){
+			if ((_column ? _table[_index].second : _table[_index].first) < _pivotValue){
 				swapRow(_table,_index,_divideIndex);
 				_divideIndex++;
 			}
