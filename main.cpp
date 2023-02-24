@@ -19,6 +19,7 @@ int main() {
 	// 	}
 	// 	std::cout << " \n";
 	// }
+	std::cout << C.size() << std::endl;
 	std::cout << "*************************************" << std::endl;
 
 
@@ -56,7 +57,50 @@ int main() {
 	// end
 	auto finish_2 = std::chrono::high_resolution_clock::now();
 	std::cout << "HashJoin:" << std::chrono::duration_cast<std::chrono::nanoseconds>(finish_2-start_2).count() << '\n';
+	std::cout << firstResultColumn.size() << std::endl;
 	// for (int i = 0; i < firstResultColumn.size(); i++){
 	// 	std::cout << secondResultColumn[i] << " " << firstResultColumn[i] << '\n';
 	// }
+	std::cout << "*************************************" << std::endl;
+
+
+
+
+
+
+
+	auto start_3 = std::chrono::high_resolution_clock::now();
+	std::vector<int64_t> phase2_a;
+    std::vector<int64_t> phase2_f;
+	int d_size = phase1_d.size();
+    std::vector<int64_t> __v;
+    std::vector<std::pair<int64_t, std::vector<int64_t>>> hash_table2(5000, std::make_pair(-1, __v));
+    int input1_size = input1.size();
+    for (int i = 0; i < d_size; i++) {
+        int64_t hash_val = phase1_d[i] % 71;
+        if (hash_table2[hash_val].first == -1) {
+            hash_table2[hash_val].first = phase1_d[i];
+        }
+        hash_table2[hash_val].second.push_back(phase1_a[i]);
+    }
+    for (int j = 0; j < input1_size; j++) { 
+        int64_t probe_val = input1[j].first;
+        int64_t hash_val = probe_val % 71;
+        if (hash_table2[hash_val].first == probe_val) {
+            int a_size = hash_table2[hash_val].second.size();
+            for (int k = 0; k < a_size; k++) {
+                phase2_a.push_back(hash_table2[hash_val].second[k]);
+                phase2_f.push_back(input1[j].second);
+            }
+        }
+    }
+	auto finish_3 = std::chrono::high_resolution_clock::now();
+	std::cout << "Original:" << std::chrono::duration_cast<std::chrono::nanoseconds>(finish_3-start_3).count() << '\n';
+	std::cout << phase2_a.size() << std::endl;
+
+
+
+
+
+
 }

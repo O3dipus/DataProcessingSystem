@@ -136,7 +136,9 @@ public:
   }
 
   int64_t hash_function(int64_t value) {
-    return (value*8209) % 16417;
+    // 16417 is the smallest prime greater than 2*8192
+    // 8209 ~= 16417/2
+    return (value*8209) % 16417; 
   }
 
   
