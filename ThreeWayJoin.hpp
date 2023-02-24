@@ -62,10 +62,6 @@ public:
 
   bool needsInput() const override { return !noMoreInput_; }
 
-  int64_t hash(int64_t value) {
-      return (value % 5000);
-  }
-
   // Called every time your operator needs to produce data. It processes the
   // input saved in `input_` and returns a new RowVector.
   RowVectorPtr getOutput() override {
@@ -84,8 +80,8 @@ public:
     auto buffer2 = currentInput->childAt(1)->template asFlatVector<int64_t>();
 
     // make sure the inputs are ordered correctly
-    auto& input0 = inputNames[0].first == "c" ? inputs[0] : inputs[1]; //c
-    auto& input1 = inputNames[0].first != "c" ? inputs[0] : inputs[1]; //e
+    auto& input0 = inputNames[0].first == "c" ? inputs[0] : inputs[1]; //c,d
+    auto& input1 = inputNames[0].first != "c" ? inputs[0] : inputs[1]; //e,f
 
     //=============================================
     // HERE IS WHERE YOUR IMPLEMENTATION SHOULD GO!!!
@@ -97,9 +93,6 @@ public:
     // HERE IS WHERE YOUR IMPLEMENTATION SHOULD GO!!!
     std::vector<int64_t> phase1_a;
     std::vector<int64_t> phase1_d;
-    //std::cout << "Size of input0[0]: " << input0[0].size() << ". \n";
-    //std::cout << "Size of input0: " << input0.size() << ". \n";
-    //std::cout << "buffer2[0]: " << (*buffer2).valueAt(0) << ". \n";
     int buffer2_size = buffer2->size();
     int input0_size = input0.size();
     for (int i = 0; i < buffer2_size; i++) { //b
@@ -110,52 +103,28 @@ public:
             }
         }
     }
-    std::vector<int64_t> phase2_a;
-    std::vector<int64_t> phase2_f;
 
-    //std::cout << "Start Build \n";
-    // build side (d, vector of a)
-    std::vector<int64_t> __v;
-    std::vector<std::pair<int64_t, std::vector<int64_t>>> hash_table(10000, std::make_pair(-1, __v)); // 10000 = 5000 * 2
-    int d_size = phase1_d.size();
-    int input1_size = input1.size();
-    //std::cout << "Size of phase1_d: " << d_size << ". \n";
-    
-    for (int i = 0; i < d_size; i++) {
-        int64_t hash_val = phase1_d[i] % 101; // hash function, 100**2 = 10000, 101 is next prime
-        if (hash_table[hash_val].first == -1) {
-            hash_table[hash_val].first = phase1_d[i];
+    std::cout << "Start Build \n";
+    std::vector<std::pair<int64_t>> hash_table(16417, std::pair<int64_t, int64_t>());
+    for (int i = 0; i < input1.size(); i++) {
+        int64_t hash_val = hash_function(input1[i].first);
+        while (hash_table[hash_val] != std::pair<int64_t, int64_t>()){
+          hash_val = hash_function(hash_val);
         }
-        hash_table[hash_val].second.push_back(phase1_a[i]);
+        hash_table[hash_val] = input1[i];
     }
 
-    // std::cout << "Start Probe \n";
-    // probe side
-    for (int j = 0; j < input1_size; j++) { 
-        int64_t probe_val = input1[j].first;
-        int64_t hash_val = probe_val % 101;
-        if (hash_table[hash_val].first == probe_val) {//d == probe
-            int a_size = hash_table[hash_val].second.size();
-            for (int k = 0; k < a_size; k++) {
-                phase2_a.push_back(hash_table[hash_val].second[k]);
-                phase2_f.push_back(input1[j].second);
-            }
+    std::cout << "Start Probe \n";
+    for (int j = 0; j < phase1_d.size(); j++) { 
+        int64_t test_val = phase1_d[j];
+        int64_t probe_val = hash_function(test_val);
+        while (hash_table[probe_val] != std::pair<int64_t, int64_t>()){
+          if (hash_table[probe_val].first == test_val){
+            firstResultColumn.push_back(phase1_a[j]);
+            secondResultColumn.push_back(hash_table[probe_val].second);
+          }
         }
     }
-
-    /*
-    for (int i = 0; i < d_size; i++) { //d
-        for (int j = 0; j < input1_size; j++) { //e
-            if (phase1_d[i] == input1[j].first) {
-                phase2_a.push_back(phase1_a[i]);
-                phase2_f.push_back(input1[j].second);
-            }
-        }
-    }
-    */
-
-    firstResultColumn = phase2_a;
-    secondResultColumn = phase2_f;
     //=============================================
 
     inputs.clear();
@@ -165,41 +134,11 @@ public:
                                       makeFlatVector<int64_t>(secondResultColumn)});
   }
 
-  std::pair<std::vector<int64_t>, std::vector<int64_t>> hash_join(std::vector<int64_t> a_col, std::vector<int64_t> d_col, auto table3) {
-      std::vector<int64_t> phase2_a;
-      std::vector<int64_t> phase2_f;
-
-      //std::cout << "Start Build \n";
-      // build side (d, vector of a)
-      std::vector<int64_t> __v;
-      std::vector<std::pair<int64_t, std::vector<int64_t>>> hash_table(10000, std::make_pair(-1, __v)); // 10000 = 5000 * 2
-      int d_size = d_col.size();
-      int table3_size = table3.size();
-      //std::cout << "Size of phase1_d: " << d_size << ". \n";
-      
-      for (int i = 0; i < d_size; i++) {
-          int64_t hash_val = d_col[i] % 101; // hash function, 100**2 = 10000, 101 is next prime
-          if (hash_table[hash_val].first == -1) {
-              hash_table[hash_val].first = d_col[i];
-          }
-          hash_table[hash_val].second.push_back(a_col[i]);
-      }
-
-      // std::cout << "Start Probe \n";
-      // probe side
-      for (int j = 0; j < table3_size; j++) { 
-          int64_t probe_val = table3[j].first;
-          int64_t hash_val = probe_val % 101;
-          if (hash_table[hash_val].first == probe_val) {//d == probe
-              int a_size = hash_table[hash_val].second.size();
-              for (int k = 0; k < a_size; k++) {
-                  phase2_a.push_back(hash_table[hash_val].second[k]);
-                  phase2_f.push_back(table3[j].second);
-              }
-          }
-      }
-      return std::make_pair(phase2_a, phase2_f);
+  int64_t hash_function(int64_t value) {
+    return (value*8209) % 16417;
   }
+
+  
   // This simple operator is never blocked.
   exec::BlockingReason isBlocked(ContinueFuture* future) override {
     return exec::BlockingReason::kNotBlocked;
