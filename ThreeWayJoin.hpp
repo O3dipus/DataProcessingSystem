@@ -105,7 +105,7 @@ public:
     }
 
     std::cout << "Start Build \n";
-    std::vector<std::pair<int64_t>> hash_table(16417, std::pair<int64_t, int64_t>());
+    std::vector<std::pair<int64_t,int64_t>> hash_table(16417, std::pair<int64_t, int64_t>());
     for (int i = 0; i < input1.size(); i++) {
         int64_t hash_val = hash_function(input1[i].first);
         while (hash_table[hash_val] != std::pair<int64_t, int64_t>()){
@@ -122,7 +122,8 @@ public:
           if (hash_table[probe_val].first == test_val){
             firstResultColumn.push_back(phase1_a[j]);
             secondResultColumn.push_back(hash_table[probe_val].second);
-          }
+		      }
+		      probe_val = hash_function(probe_val);
         }
     }
     //=============================================
